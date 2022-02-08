@@ -3,7 +3,7 @@ import json
 import argparse
 
 import open3d
-import pymesh
+# import pymesh
 import numpy as np
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon

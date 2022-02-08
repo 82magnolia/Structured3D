@@ -120,8 +120,8 @@ def create_plane_mesh(vertices, vertices_floor, textures, texture_floor, texture
     )
     mesh.compute_vertex_normals()
 
-    mesh.texture = open3d.geometry.Image(textures)
-    mesh.triangle_uvs = np.array(triangle_uvs[triangles.reshape(-1), :], dtype=np.float64)
+    mesh.textures = [open3d.geometry.Image(textures)]
+    mesh.triangle_uvs = open3d.utility.Vector2dVector(np.array(triangle_uvs[triangles.reshape(-1), :], dtype=np.float64))
     return mesh
 
 
@@ -234,9 +234,13 @@ def visualize_mesh(args):
     # create mesh
     mesh = create_plane_mesh(corners, corner_floor, textures, texture_floor, texture_ceiling,
         delta_height, ignore_ceiling=args.ignore_ceiling)
-
+    pcd = mesh.sample_points_uniformly(number_of_points=1000000)
+    xyz = np.asarray(pcd.points)
+    xyz = xyz - xyz.mean(0)
+    
+    return xyz
     # visualize mesh
-    open3d.visualization.draw_geometries([mesh])
+    # open3d.visualization.draw_geometries([mesh])
 
 
 def parse_args():
@@ -255,7 +259,7 @@ def parse_args():
 def main():
     args = parse_args()
 
-    visualize_mesh(args)
+    xyz = get_xyz(args)
 
 
 if __name__ == "__main__":
