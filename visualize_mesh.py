@@ -259,7 +259,7 @@ def parse_args():
 def main():
     args = parse_args()
 
-    xyz = get_xyz(args)
+    xyz = visualize_mesh(args)
 
 
 if __name__ == "__main__":
