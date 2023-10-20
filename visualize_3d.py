@@ -6,8 +6,8 @@ import open3d
 # import pymesh
 import numpy as np
 import matplotlib.pyplot as plt
-from shapely.geometry import Polygon
-from descartes.patch import PolygonPatch
+# from shapely.geometry import Polygon
+# from descartes.patch import PolygonPatch
 
 from misc.figures import plot_coords
 from misc.colors import colormap_255, semantics_cmap
@@ -64,6 +64,57 @@ def visualize_wireframe(annos):
     line_set.colors = open3d.utility.Vector3dVector(line_colors)
 
     open3d.visualization.draw_geometries([junction_set, line_set])
+
+
+def visualize_line_map(annos):
+    # Visualize line map for each room
+    colormap = np.array(colormap_255) / 255
+
+    junctions = np.array([item['coordinate'] for item in annos['junctions']])
+    _, junction_pairs = np.where(np.array(annos['lineJunctionMatrix']))
+    junction_pairs = junction_pairs.reshape(-1, 2)
+    
+    door_groups = []
+    window_groups = []
+    room_groups = []
+
+    plane2line = np.array(annos['planeLineMatrix'])
+    line2junction = np.array(annos['lineJunctionMatrix'])
+    plane2junction = plane2line @ line2junction
+
+    # Iterate over each semantics annotation and extract room
+    for semantic in annos['semantics']:
+        if semantic['type'] == 'door':
+            door_groups.append(semantic)
+        elif semantic['type'] == 'window':
+            window_groups.append(semantic)
+        elif semantic['type'] == 'outwall':  # Remove outwalls
+            continue
+        else:
+            room_groups.append(semantic)
+    
+    # Iterate over each room and read junctions
+    for room in room_groups:
+        line_dict = {
+            'end_points': [],
+            'junction_pairs': []
+        }
+        for plane_id in room['planeID']:
+            plane_line_ids = np.where(plane2line[plane_id])[0]
+            plane_junction_pairs = junction_pairs[plane_line_ids]
+            plane_junction_points = junctions[plane_junction_pairs.flatten()]
+            
+            line_dict['end_points'].append(plane_junction_points)
+            line_dict['junction_pairs'].append(plane_junction_pairs)
+
+        line_dict['end_points'] = np.concatenate(line_dict['end_points'], axis=0)
+        line_dict['junction_pairs'] = np.concatenate(line_dict['junction_pairs'], axis=0)
+
+        line_set = open3d.geometry.LineSet()
+        line_set.points = open3d.utility.Vector3dVector(junctions)
+        line_set.lines = open3d.utility.Vector2iVector(line_dict['junction_pairs'])
+
+        open3d.visualization.draw_geometries([line_set])
 
 
 def project(x, meta):
@@ -342,7 +393,7 @@ def parse_args():
                         help="dataset path", metavar="DIR")
     parser.add_argument("--scene", required=True,
                         help="scene id", type=int)
-    parser.add_argument("--type", choices=("floorplan", "wireframe", "plane"),
+    parser.add_argument("--type", choices=("floorplan", "wireframe", "plane", "line_map"),
                         default="plane", type=str)
     parser.add_argument("--color", choices=["normal", "manhattan"],
                         default="normal", type=str)
@@ -362,6 +413,8 @@ def main():
         visualize_plane(annos, args)
     elif args.type == "floorplan":
         visualize_floorplan(annos)
+    elif args.type == "line_map":
+        visualize_line_map(annos)
 
 
 if __name__ == "__main__":
