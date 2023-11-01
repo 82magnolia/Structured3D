@@ -66,7 +66,7 @@ def visualize_wireframe(annos):
     open3d.visualization.draw_geometries([junction_set, line_set])
 
 
-def visualize_line_map(annos):
+def visualize_line_map(annos, full=False):
     # Visualize line map for each room
     colormap = np.array(colormap_255) / 255
 
@@ -94,6 +94,8 @@ def visualize_line_map(annos):
             room_groups.append(semantic)
     
     # Iterate over each room and read junctions
+    total_line_points = []
+    total_lines = []
     for room in room_groups:
         line_dict = {
             'end_points': [],
@@ -110,9 +112,23 @@ def visualize_line_map(annos):
         line_dict['end_points'] = np.concatenate(line_dict['end_points'], axis=0)
         line_dict['junction_pairs'] = np.concatenate(line_dict['junction_pairs'], axis=0)
 
+        if not full:
+            line_set = open3d.geometry.LineSet()
+            line_set.points = open3d.utility.Vector3dVector(junctions)
+            line_set.lines = open3d.utility.Vector2iVector(line_dict['junction_pairs'])
+
+            open3d.visualization.draw_geometries([line_set])
+        else:
+            total_line_points.append(junctions)
+            total_lines.append(line_dict['junction_pairs'])
+
+    if full:
+        total_line_points = np.concatenate(total_line_points, axis=0)
+        total_lines = np.concatenate(total_lines, axis=0)
+
         line_set = open3d.geometry.LineSet()
-        line_set.points = open3d.utility.Vector3dVector(junctions)
-        line_set.lines = open3d.utility.Vector2iVector(line_dict['junction_pairs'])
+        line_set.points = open3d.utility.Vector3dVector(total_line_points)
+        line_set.lines = open3d.utility.Vector2iVector(total_lines)
 
         open3d.visualization.draw_geometries([line_set])
 
@@ -393,7 +409,7 @@ def parse_args():
                         help="dataset path", metavar="DIR")
     parser.add_argument("--scene", required=True,
                         help="scene id", type=int)
-    parser.add_argument("--type", choices=("floorplan", "wireframe", "plane", "line_map"),
+    parser.add_argument("--type", choices=("floorplan", "wireframe", "plane", "line_map", "line_map_full"),
                         default="plane", type=str)
     parser.add_argument("--color", choices=["normal", "manhattan"],
                         default="normal", type=str)
@@ -415,6 +431,8 @@ def main():
         visualize_floorplan(annos)
     elif args.type == "line_map":
         visualize_line_map(annos)
+    elif args.type == "line_map_full":
+        visualize_line_map(annos, full=True)
 
 
 if __name__ == "__main__":
