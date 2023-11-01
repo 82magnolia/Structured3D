@@ -12,7 +12,7 @@ from misc.panorama import draw_boundary_from_cor_id
 from misc.colors import colormap_255
 
 
-def visualize_panorama(args):
+def visualize_panorama(args, fill_blank=False):
     """visualize panorama layout
     """
     scene_path = os.path.join(args.path, f"scene_{args.scene:05d}", "2D_rendering")
@@ -23,9 +23,11 @@ def visualize_panorama(args):
         cor_id = np.loadtxt(os.path.join(room_path, "layout.txt"))
         img_src = cv2.imread(os.path.join(room_path, "full", "rgb_rawlight.png"))
         img_src = cv2.cvtColor(img_src, cv2.COLOR_BGR2RGB)
+
+        if fill_blank:
+            img_src[...] = 255
         img_viz = draw_boundary_from_cor_id(cor_id, img_src)
 
-        plt.axis('off')
         plt.imshow(img_viz)
         plt.show()
 
@@ -75,7 +77,7 @@ def parse_args():
                         help="dataset path", metavar="DIR")
     parser.add_argument("--scene", required=True,
                         help="scene id", type=int)
-    parser.add_argument("--type", choices=["perspective", "panorama"], required=True,
+    parser.add_argument("--type", choices=["perspective", "panorama", "panorama_blank"], required=True,
                         help="type of camera", type=str)
     return parser.parse_args()
 
@@ -85,6 +87,8 @@ def main():
 
     if args.type == 'panorama':
         visualize_panorama(args)
+    elif args.type == 'panorama_blank':
+        visualize_panorama(args, True)
     elif args.type == 'perspective':
         visualize_perspective(args)
 
