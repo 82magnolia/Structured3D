@@ -6,8 +6,8 @@ import open3d
 # import pymesh
 import numpy as np
 import matplotlib.pyplot as plt
-# from shapely.geometry import Polygon
-# from descartes.patch import PolygonPatch
+from shapely.geometry import Polygon
+from descartes.patch import PolygonPatch
 
 from misc.figures import plot_coords
 from misc.colors import colormap_255, semantics_cmap
